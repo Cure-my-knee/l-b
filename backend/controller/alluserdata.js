@@ -1,6 +1,7 @@
 const moment = require("moment");
 const db = require("../models");
 const allUserData = db.all_user_data;
+const allUserDataHistory = db.all_user_data_history;
 const { Op, literal } = require("sequelize");
 
 exports.create = async (req, res) => {
@@ -158,7 +159,12 @@ exports.phoneorname = async (req, res) => {
 exports.readbyId = async (req, res) => {
   try {
     const id = req.params.id;
-    const result = await allUserData.findOne({ where: { id: id } });
+    let option={ where: { id: id },include: [
+      {
+        association: "all_user_data_history",
+      },
+    ], }
+    const result = await allUserData.findOne(option);
     if (result) {
       return res.status(200).json({
         status: 1,
@@ -197,7 +203,7 @@ exports.updatebyId = async (req, res) => {
     } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
-      result.update({
+     await result.update({
         name: name,
         age: age,
         queries: queries,
@@ -232,11 +238,28 @@ exports.updatebyId = async (req, res) => {
 exports.reschedule = async (req, res) => {
   try {
     const id = req.params.id;
-    const { status, comment, rdate } = req.body;
+    const { leadstatus, comment, rdate } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
-    if (result && result.length > 0) {
-      result.update({
-        status: status,
+    if (result) {
+    let obj = {
+      leadId:result.id,
+      name: result.name,
+      age: result.age,
+      queries: result.queries,
+      email: result.email,
+      phone: result.phone,
+      source: result.source,
+      country: result.country,
+      state: result.state,
+      city: result.city,
+      followup_date: result.followup_date,
+      status: result.status,
+      comment: result.comment,
+      user: result.user,
+    };
+    const data = await allUserDataHistory.create(obj);
+     await result.update({
+        status: leadstatus,
         comment: comment,
         followup_date: rdate,
       });

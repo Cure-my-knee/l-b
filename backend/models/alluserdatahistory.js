@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const UserData = sequelize.define("all_user_data_history", {
+  const UserDataHistory = sequelize.define("all_user_data_history", {
     leadId: {
       type: DataTypes.INTEGER,
       allownull: false,
@@ -58,6 +58,13 @@ module.exports = (sequelize, DataTypes) => {
       allownull: false,
     },
   });
+    
+  UserDataHistory.associate = function (models) {
+    UserDataHistory.belongsTo(models.all_user_data, {
+      foreignKey: "leadId",
+      as: "all_user_data",
+    });
+  };
   // UserData.sync({force:true})
-  return UserData;
+  return UserDataHistory;
 };
