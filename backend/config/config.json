@@ -1,23 +1,23 @@
 {
   "development": {
-    "username": "root",
-    "password": "Curemyknee@123",
-    "database": "curemykneecrm",
-    "host": "127.0.0.1",
+    "username": "admin",
+    "password": "WSSzQR7tWb8lf7a8gS2K",
+    "database": "cmkcrm",
+    "host": "curemykneecrm.cjkiy6046g6g.ap-south-1.rds.amazonaws.com",
     "dialect": "mysql"
   },
   "test": {
-    "username": "root",
-    "password": "Curemyknee@123",
-    "database": "curemykneecrm",
-    "host": "127.0.0.1",
+    "username": "admin",
+    "password": "WSSzQR7tWb8lf7a8gS2K",
+    "database": "cmkcrm",
+    "host": "curemykneecrm.cjkiy6046g6g.ap-south-1.rds.amazonaws.com",
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": "Curemyknee@123",
-    "database": "curemykneecrm",
-    "host": "127.0.0.1",
+    "username": "admin",
+    "password": "WSSzQR7tWb8lf7a8gS2K",
+    "database": "cmkcrm",
+    "host": "curemykneecrm.cjkiy6046g6g.ap-south-1.rds.amazonaws.com",
     "dialect": "mysql"
   }
 }
