@@ -20,6 +20,10 @@ module.exports=(sequelize, DataTypes)=>{
             type: DataTypes.BOOLEAN,
             defaultValue: false
          },
+         allowLogin:{
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+         },
          } );
         //  sequelize.sync({force:true})
          return User;
