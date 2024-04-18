@@ -42,6 +42,9 @@ exports.login = async (req, res) => {
         .status(200)
         .json({ status: 0, message: "Password is not correct" });
     }
+    if (!result.allowLogin) {
+      return res.status(200).json({ status: 0, message: "You are in waitting list" });
+    }
     const token = jwt.sign(
       { email: result.email, name: result.name.toString() },
       "bsfnvhjfcswdkbesdktjcva",
@@ -59,6 +62,33 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error });
   }
 };
+
+
+exports.GiveAcces = async (req, res)=>{
+  try {
+    const id = req.params.id;
+    const allowLogin=1;
+    const result=await User.findOne({ where: { id:id } });
+    if(result){
+await result.update({
+  allowLogin:allowLogin
+})
+return res.status(200).json({
+  status:1,
+  message:"success",
+  data:result
+})
+    }else{
+return res.status(200).json({
+  status:0,
+  message:"No data found"
+})
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({error});
+  }
+}
 
 exports.getUserByEmail = async (req, res, email) => {
   try {
