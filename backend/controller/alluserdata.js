@@ -162,8 +162,6 @@ exports.readbyId = async (req, res) => {
       ],
     }
     const result = await allUserData.findOne(option);
-    console.log("id:====",id);
-    console.log(result);
    
     if (result) {
       return res.status(200).json({
@@ -493,8 +491,8 @@ exports.uploadData = async (req, res) => {
           phone: contactNumber,
           source: source,
           country: location,
-          state: location,
-          city: location,
+          state: "",
+          city: "",
           followup_date: dateOfAppointment,
           status: status,
           comment: thirdFollowupStatus,
