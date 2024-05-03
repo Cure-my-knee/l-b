@@ -1,7 +1,9 @@
 const moment = require("moment");
 const db = require("../models");
 const allUserData = db.all_user_data;
-const allUserDataHistory = db.all_user_data_history;
+const allUserDataHistory = db.all_user_data_histories;
+const Users = db.crmusers;
+const { validateFileType, uploadFile, readFile } = require("../midelware/commonServices");
 const { Op, literal } = require("sequelize");
 
 exports.create = async (req, res) => {
@@ -20,14 +22,14 @@ exports.create = async (req, res) => {
       leadstatus,
       comment
     } = req.body;
-    let user= req.email
-    const isAdmin=req.isAdmin
-    if(isAdmin){
-      user=req.body.user
-      if(!user){
+    let user = req.email
+    const isAdmin = req.isAdmin
+    if (isAdmin) {
+      user = req.body.user
+      if (!user) {
         return res
-        .status(200)
-        .json({ status: 0, message: "please select user" });
+          .status(200)
+          .json({ status: 0, message: "please select user" });
       }
     }
     let obj = {
@@ -45,6 +47,7 @@ exports.create = async (req, res) => {
       comment: comment,
       user: user,
     };
+
     let result = await allUserData.findOne({ where: { phone: phone } });
     if (result) {
       return res
@@ -73,38 +76,42 @@ exports.readdata = async (req, res) => {
     let result = "";
     console.log(isAdmin);
     if (!status) {
-if(isAdmin){
-  result = await allUserData.findAll();
-}else{
-  result = await allUserData.findAll({where:{user:user}});}
-    }else if(status==="followup"){
-      if(isAdmin){
+      if (isAdmin) {
+        result = await allUserData.findAll();
+      } else {
+        result = await allUserData.findAll({ where: { user: user } });
+      }
+    } else if (status === "followup") {
+      if (isAdmin) {
         result = await allUserData.findAll({
           where: {
             status: {
-            [Op.or]: ["F", "R"],
-          }
-        },
+              [Op.or]: ["F", "R"],
+            }
+          },
         });
-      }else{
+      } else {
         result = await allUserData.findAll({
-          where: { user: user ,
+          where: {
+            user: user,
             status: {
-            [Op.or]: ["F", "R"],
-          }
-        },
-        });}
-    } 
+              [Op.or]: ["F", "R"],
+            }
+          },
+        });
+      }
+    }
     else {
-      if(isAdmin){
+      if (isAdmin) {
         result = await allUserData.findAll({
           where: { status: status },
         });
-      }else{
+      } else {
         result = await allUserData.findAll({
           where: { status: status, user: user },
-        });}
-      
+        });
+      }
+
     }
     if (result && result.length > 0) {
       return res
@@ -122,22 +129,9 @@ if(isAdmin){
   }
 };
 
-exports.phoneorname = async (req, res) => {
+exports.allUsers = async (req, res) => {
   try {
-    const phone = req.query.phone;
-    const name = req.query.name;
-    const user = req.email;
-    let result = "";
-    if (phone) {
-      result = await allUserData.findAll({
-        where: { phone:phone, user: user },
-      });
-    }
-    if (name) {
-      result = await allUserData.findAll({
-        where: {  name: name, user: user },
-      });
-    }
+    const result = await Users.findAll();
     if (result && result.length > 0) {
       return res.status(200).json({
         status: 1,
@@ -159,12 +153,18 @@ exports.phoneorname = async (req, res) => {
 exports.readbyId = async (req, res) => {
   try {
     const id = req.params.id;
-    let option={ where: { id: id },include: [
-      {
-        association: "all_user_data_history",
-      },
-    ], }
+    let option = {
+      where: { id: id }, include: [
+        {
+          association: "all_user_data_histories",
+          required:true
+        },
+      ],
+    }
     const result = await allUserData.findOne(option);
+    console.log("id:====",id);
+    console.log(result);
+   
     if (result) {
       return res.status(200).json({
         status: 1,
@@ -203,7 +203,7 @@ exports.updatebyId = async (req, res) => {
     } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
-     await result.update({
+      await result.update({
         name: name,
         age: age,
         queries: queries,
@@ -241,24 +241,24 @@ exports.reschedule = async (req, res) => {
     const { leadstatus, comment, rdate } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
-    let obj = {
-      leadId:result.id,
-      name: result.name,
-      age: result.age,
-      queries: result.queries,
-      email: result.email,
-      phone: result.phone,
-      source: result.source,
-      country: result.country,
-      state: result.state,
-      city: result.city,
-      followup_date: result.followup_date,
-      status: result.status,
-      comment: result.comment,
-      user: result.user,
-    };
-    const data = await allUserDataHistory.create(obj);
-     await result.update({
+      let obj = {
+        leadId: result.id,
+        name: result.name,
+        age: result.age,
+        queries: result.queries,
+        email: result.email,
+        phone: result.phone,
+        source: result.source,
+        country: result.country,
+        state: result.state,
+        city: result.city,
+        followup_date: result.followup_date,
+        status: result.status,
+        comment: result.comment,
+        user: result.user,
+      };
+      const data = await allUserDataHistory.create(obj);
+      await result.update({
         status: leadstatus,
         comment: comment,
         followup_date: rdate,
@@ -328,61 +328,62 @@ exports.carddata = async (req, res) => {
   const month = String(currentDate.getMonth() + 1).padStart(2, "0"); //  
   const day = String(currentDate.getDate()).padStart(2, "0");
   const todayDate = `${year}-${month}-${day}`;
-  let today=moment().format("YYYY-MM-DD")
+  let today = moment().format("YYYY-MM-DD")
   try {
     const user = req.email;
     const isAdmin = req.isAdmin;
-    let totalLead,totalRelevent,todayFollowup,todayLeads
-    if(isAdmin){
+    let totalLead, totalRelevent, todayFollowup, todayLeads
+    if (isAdmin) {
       totalLead = await allUserData.count();
       totalRelevent = await allUserData.count({
-       where: { status: "R" },
-     });
+        where: { status: "R" },
+      });
       todayFollowup = await allUserData.count({
-       where: {
-         followup_date: todayDate,
-         status: {
-           [Op.or]: ["F", "R"],
-         },
-       },
-     });
-     
-      todayLeads = await allUserData.count({
-       where: {
-         createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
-       },
-     });
-    }else{
-     totalLead = await allUserData.count({ where: { user: user } });
-     totalRelevent = await allUserData.count({
-      where: { user: user, status: "R" },
-    });
-     todayFollowup = await allUserData.count({
-      where: {
-        user: user,
-        followup_date: todayDate,
-        status: {
-          [Op.or]: ["F", "R"],
+        where: {
+          followup_date: todayDate,
+          status: {
+            [Op.or]: ["F", "R"],
+          },
         },
-      },
-    });
-    
-     todayLeads = await allUserData.count({
-      where: {
-        user: user,
-        createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
-      },
-    });}
-  return res.status(200).json({
-    status:1,
-    message:"success",
-    data:{
-      totalLead:totalLead,
-      totalRelevent:totalRelevent,
-      todayFollowup:todayFollowup,
-      todayLeads:todayLeads
+      });
+
+      todayLeads = await allUserData.count({
+        where: {
+          createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
+        },
+      });
+    } else {
+      totalLead = await allUserData.count({ where: { user: user } });
+      totalRelevent = await allUserData.count({
+        where: { user: user, status: "R" },
+      });
+      todayFollowup = await allUserData.count({
+        where: {
+          user: user,
+          followup_date: todayDate,
+          status: {
+            [Op.or]: ["F", "R"],
+          },
+        },
+      });
+
+      todayLeads = await allUserData.count({
+        where: {
+          user: user,
+          createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
+        },
+      });
     }
-  })
+    return res.status(200).json({
+      status: 1,
+      message: "success",
+      data: {
+        totalLead: totalLead,
+        totalRelevent: totalRelevent,
+        todayFollowup: todayFollowup,
+        todayLeads: todayLeads
+      }
+    })
   } catch (error) {
     console.log(error);
     return res.send(error);
@@ -391,7 +392,7 @@ exports.carddata = async (req, res) => {
 
 exports.todayApp = async (req, res) => {
   try {
-    const user=req.email
+    const user = req.email
     const isAdmin = req.isAdmin;
     const currentDate = new Date();
     const year = currentDate.getFullYear();
@@ -400,24 +401,25 @@ exports.todayApp = async (req, res) => {
     const todayDate = `${year}-${month}-${day}`;
     console.log(todayDate);
     let result = "";
-    if(isAdmin){
-      result = await allUserData.findAll({     
-        where: {status: "Apt", followup_date: todayDate },
+    if (isAdmin) {
+      result = await allUserData.findAll({
+        where: { status: "Apt", followup_date: todayDate },
       });
-    }else{
-      result = await allUserData.findAll({     
-        where: {user:user,status: "Apt", followup_date: todayDate },
-      });}
+    } else {
+      result = await allUserData.findAll({
+        where: { user: user, status: "Apt", followup_date: todayDate },
+      });
+    }
     if (result) {
       return res.status(200).json({
-        status:1,
-        message:"success",
-        data:result
+        status: 1,
+        message: "success",
+        data: result
       })
-    }else{
+    } else {
       return res.status(200).json({
-        status:0,
-        message:"no record found",
+        status: 0,
+        message: "no record found",
       })
     }
   } catch (error) {
@@ -427,3 +429,142 @@ exports.todayApp = async (req, res) => {
 };
 
 
+
+exports.uploadData = async (req, res) => {
+  const file = req.file;
+  const extensions = ["xlsx", "csv"];
+
+  const options = { userId: req.userId };
+  const uploadPath = `${__dirname}/upload`;
+
+  let user = req.email
+
+  //  validate file type
+  if (!(await validateFileType({ file, extensions }))) {
+    return res.send({
+      status: 0,
+      message: "Please upload CSV or Excel file only",
+    });
+  }
+  // transfer upload fie in upload path
+  if (!(await uploadFile({ file, uploadPath }))) {
+    return res.send({ status: 0, message: "Something went wrong" });
+  }
+
+
+
+  try {
+
+    let fileObj = { file: file, uploadPath: uploadPath };
+    // read file
+    fileObj = await readFile(fileObj);
+    if (!fileObj || fileObj.fileData.length <= 0)
+      return res.send({
+        status: 0,
+        message: "file is empty pls provide record",
+      });
+
+    let dataInserted=[]
+    if (fileObj) {
+      let recordCount = fileObj.fileData.length;
+
+      for (const iterator of fileObj.fileData) {
+
+        let date = iterator.field1;
+        let agentName = iterator.field2;
+        let agentMailId = iterator.field3;
+        let queryAwsFromNumber = iterator.field4;
+        let source = iterator.field5;
+        let paitentName = iterator.field6;
+        let contactNumber = iterator.field7;
+        let location = iterator.field8;
+        let treatmentEnquired = iterator.field9;
+        let firstFollowupStatus = iterator.field10;
+        let dateOfAppointment = iterator.field11;
+        let secoundFollowupStatus = iterator.field12;
+        let thirdFollowupStatus = iterator.field13;
+        let status = iterator.field14;
+
+        let obj = {
+          name: paitentName,
+          age: 0,
+          queries: treatmentEnquired,
+          email: "",
+          phone: contactNumber,
+          source: source,
+          country: location,
+          state: location,
+          city: location,
+          followup_date: dateOfAppointment,
+          status: status,
+          comment: thirdFollowupStatus,
+          user: agentMailId,
+          createdAt:moment(date).format("YYYY-DD-MM HH:mm:ss")
+        };
+        console.log(obj);
+        try {
+          let result = await allUserData.findOne({ where: { phone: contactNumber  } });
+          if (result) {
+            continue
+            // return res
+              // .status(200)
+              // .json({ status: 0, message: "This data is already exists" });
+          }
+           result = await allUserData.create(obj);
+          dataInserted.push(result)
+          if (firstFollowupStatus) {
+            let obj = {
+              leadId: result.id,
+              name: result.name,
+              age: result.age,
+              queries: result.queries,
+              email: result.email,
+              phone: result.phone,
+              source: result.source,
+              country: result.country,
+              state: result.state,
+              city: result.city,
+              followup_date: result.followup_date,
+              status:result.status,
+              comment: firstFollowupStatus,
+              user: result.user,
+              createdAt:result.createdAt
+            };
+            const data = await allUserDataHistory.create(obj);
+          }
+          if (secoundFollowupStatus) {
+            let obj = {
+              leadId: result.id,
+              name: result.name,
+              age: result.age,
+              queries: result.queries,
+              email: result.email,
+              phone: result.phone,
+              source: result.source,
+              country: result.country,
+              state: result.state,
+              city: result.city,
+              followup_date: result.followup_date,
+              status: result.status,
+              comment: secoundFollowupStatus,
+              user: result.user,
+              createdAt:result.createdAt
+            };
+            const data = await allUserDataHistory.create(obj);
+          }
+        } catch (error) {
+          console.log("error", error);
+          dataInserted.push(JSON.parse(error))
+        }
+      }
+      return res.send({
+        status: 1,
+        message: "Success",
+        data: dataInserted,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ status: 0, error: error });
+  }
+};

@@ -55,12 +55,12 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
   UserData.associate = function (models) {
-    UserData.hasMany(models.all_user_data_history, {
+    UserData.hasMany(models.all_user_data_histories, {
       foreignKey: "leadId",
-      as: "all_user_data_history",
+      as: "all_user_data_histories",
     });
   };
 
-  // sequelize.sync({force:true})
+  // UserData.sync({force:true})
   return UserData;
 };

@@ -67,7 +67,7 @@ exports.login = async (req, res) => {
 exports.GiveAcces = async (req, res)=>{
   try {
     const id = req.params.id;
-    const allowLogin=1;
+    const {allowLogin}=req.body;
     const result=await User.findOne({ where: { id:id } });
     if(result){
 await result.update({
@@ -143,3 +143,5 @@ exports.getselfUser = async (req, res) => {
     return res.send(error);
   }
 };
+
+

@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const UserDataHistory = sequelize.define("all_user_data_history", {
+  const UserDataHistory = sequelize.define("all_user_data_histories", {
     leadId: {
       type: DataTypes.INTEGER,
       allownull: false,
@@ -65,6 +65,6 @@ module.exports = (sequelize, DataTypes) => {
       as: "all_user_data",
     });
   };
-  // UserData.sync({force:true})
+  // UserDataHistory.sync({force:true})
   return UserDataHistory;
 };
