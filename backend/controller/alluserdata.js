@@ -483,6 +483,23 @@ exports.uploadData = async (req, res) => {
         let thirdFollowupStatus = iterator.field13;
         let status = iterator.field14;
 
+
+if (typeof date === 'string') {
+
+  let parts = date.split("-"); // Split the string by '-'
+
+  // Extract day, month, and year from the parts array
+  let day = parseInt(parts[0]);
+  let month = parseInt(parts[1]) - 1; // Month is zero-based in JavaScript Date object
+  let year = parseInt(parts[2]);
+  
+  // Create a new Date object
+   date= new Date(year, month, day);
+
+}
+
+
+
         let obj = {
           name: paitentName,
           age: 0,
@@ -497,16 +514,13 @@ exports.uploadData = async (req, res) => {
           status: status,
           comment: thirdFollowupStatus,
           user: agentMailId,
-          createdAt:moment(date).format("YYYY-DD-MM HH:mm:ss")
+          createdAt:moment(date).format("YYYY-MM-DD HH:mm:ss")
         };
         console.log(obj);
         try {
           let result = await allUserData.findOne({ where: { phone: contactNumber  } });
           if (result) {
             continue
-            // return res
-              // .status(200)
-              // .json({ status: 0, message: "This data is already exists" });
           }
            result = await allUserData.create(obj);
           dataInserted.push(result)
