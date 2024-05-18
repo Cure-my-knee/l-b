@@ -77,13 +77,14 @@ exports.readdata = async (req, res) => {
     console.log(isAdmin);
     if (!status) {
       if (isAdmin) {
-        result = await allUserData.findAll();
+        result = await allUserData.findAll({order:[["createdAt", "DESC"]]});
       } else {
-        result = await allUserData.findAll({ where: { user: user } });
+        result = await allUserData.findAll({ where: { user: user } , order:[["createdAt", "DESC"]]});
       }
     } else if (status === "followup") {
       if (isAdmin) {
         result = await allUserData.findAll({
+          order:[["createdAt", "DESC"]],
           where: {
             status: {
               [Op.or]: ["F", "R"],
@@ -92,6 +93,7 @@ exports.readdata = async (req, res) => {
         });
       } else {
         result = await allUserData.findAll({
+          order:[["createdAt", "DESC"]],
           where: {
             user: user,
             status: {
@@ -101,14 +103,18 @@ exports.readdata = async (req, res) => {
         });
       }
     }
+
+
     else {
       if (isAdmin) {
         result = await allUserData.findAll({
-          where: { status: status },
+          order:[["createdAt", "DESC"]],
+          where: { status: status }, 
         });
       } else {
         result = await allUserData.findAll({
-          where: { status: status, user: user },
+          order:[["createdAt", "DESC"]],
+          where: { status: status, user: user }
         });
       }
 
@@ -216,6 +222,7 @@ exports.updatebyId = async (req, res) => {
         comment: comment,
         user: user,
       });
+      console.log("status" ,status );
       return res.status(200).json({
         status: 1,
         message: "success",
@@ -250,6 +257,7 @@ exports.reschedule = async (req, res) => {
         country: result.country,
         state: result.state,
         city: result.city,
+        
         followup_date: result.followup_date,
         status: result.status,
         comment: result.comment,
@@ -401,11 +409,11 @@ exports.todayApp = async (req, res) => {
     let result = "";
     if (isAdmin) {
       result = await allUserData.findAll({
-        where: { status: "Apt", followup_date: todayDate },
+        where: { status: "AptF", followup_date: todayDate },
       });
     } else {
       result = await allUserData.findAll({
-        where: { user: user, status: "Apt", followup_date: todayDate },
+        where: { user: user, status: "AptF", followup_date: todayDate },
       });
     }
     if (result) {
