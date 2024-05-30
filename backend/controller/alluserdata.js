@@ -3,7 +3,11 @@ const db = require("../models");
 const allUserData = db.all_user_data;
 const allUserDataHistory = db.all_user_data_histories;
 const Users = db.crmusers;
-const { validateFileType, uploadFile, readFile } = require("../midelware/commonServices");
+const {
+  validateFileType,
+  uploadFile,
+  readFile,
+} = require("../midelware/commonServices");
 const { Op, literal } = require("sequelize");
 
 exports.create = async (req, res) => {
@@ -20,12 +24,12 @@ exports.create = async (req, res) => {
       city,
       followup_date,
       leadstatus,
-      comment
+      comment,
     } = req.body;
-    let user = req.email
-    const isAdmin = req.isAdmin
+    let user = req.email;
+    const isAdmin = req.isAdmin;
     if (isAdmin) {
-      user = req.body.user
+      user = req.body.user;
       if (!user) {
         return res
           .status(200)
@@ -69,60 +73,81 @@ exports.create = async (req, res) => {
 };
 
 exports.readdata = async (req, res) => {
+  let {
+    page,
+    limit,
+  } = req.query;
   try {
     const status = req.query.status;
     const user = req.email;
     const isAdmin = req.isAdmin;
-    let result = "";
+    let option = { order: [["createdAt", "DESC"]] };
+    if (page !== undefined && Number.isInteger(parseInt(page))) {
+      limit = limit && Number.isInteger(parseInt(limit)) ? +limit : 5;
+      page = parseInt(page);
+      page = page - 1 >= 0 ? page - 1 : 0;
+      option["limit"] = limit;
+      option["offset"] = page ? page * limit : 0;
+    }
     console.log(isAdmin);
     if (!status) {
-      if (isAdmin) {
-        result = await allUserData.findAll({order:[["createdAt", "DESC"]]});
-      } else {
-        result = await allUserData.findAll({ where: { user: user } , order:[["createdAt", "DESC"]]});
+      if (!isAdmin) {
+        option.where = { user: user };
       }
     } else if (status === "followup") {
       if (isAdmin) {
-        result = await allUserData.findAll({
-          order:[["createdAt", "DESC"]],
-          where: {
-            status: {
-              [Op.or]: ["F", "R"],
-            }
+        option.where = {
+          status: {
+            [Op.or]: ["F", "R"],
           },
-        });
+        };
+        // result = await allUserData.findAll({
+        //   order: [["createdAt", "DESC"]],
+        //   where: {
+        //     status: {
+        //       [Op.or]: ["F", "R"],
+        //     },
+        //   },
+        // });
       } else {
-        result = await allUserData.findAll({
-          order:[["createdAt", "DESC"]],
-          where: {
-            user: user,
-            status: {
-              [Op.or]: ["F", "R"],
-            }
+        option.where = {
+          user: user,
+          status: {
+            [Op.or]: ["F", "R"],
           },
-        });
+        };
+        // result = await allUserData.findAll({
+        //   order: [["createdAt", "DESC"]],
+        //   where: {
+        //     user: user,
+        //     status: {
+        //       [Op.or]: ["F", "R"],
+        //     },
+        //   },
+        // });
       }
-    }
-
-
-    else {
+    } else {
       if (isAdmin) {
-        result = await allUserData.findAll({
-          order:[["createdAt", "DESC"]],
-          where: { status: status }, 
-        });
+        option.where = { status: status };
+        // result = await allUserData.findAll({
+        //   order: [["createdAt", "DESC"]],
+        //   where: { status: status },
+        // });
       } else {
-        result = await allUserData.findAll({
-          order:[["createdAt", "DESC"]],
-          where: { status: status, user: user }
-        });
+        option.where = { status: status, user: user };
       }
-
     }
-    if (result && result.length > 0) {
-      return res
-        .status(200)
-        .json({ status: 1, message: "success", data: result });
+    const { count, rows } = await allUserData.findAndCountAll(option);
+    if (rows && rows.length > 0) {
+      return res.send({
+        status: 1,
+        message: "success",
+        totalCount: count,
+        recordCount: rows.length,
+        currentPage: page ? page : undefined,
+        nextPage: page ? parseInt(page) + 1 : undefined,
+        data: rows,
+      });
     } else {
       return res.status(200).json({
         status: 0,
@@ -160,15 +185,16 @@ exports.readbyId = async (req, res) => {
   try {
     const id = req.params.id;
     let option = {
-      where: { id: id }, include: [
+      where: { id: id },
+      include: [
         {
           association: "all_user_data_histories",
-          required:true
+          required: true,
         },
       ],
-    }
+    };
     const result = await allUserData.findOne(option);
-   
+
     if (result) {
       return res.status(200).json({
         status: 1,
@@ -203,7 +229,7 @@ exports.updatebyId = async (req, res) => {
       followup_date,
       status,
       comment,
-      user
+      user,
     } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
@@ -222,7 +248,7 @@ exports.updatebyId = async (req, res) => {
         comment: comment,
         user: user,
       });
-      console.log("status" ,status );
+      console.log("status", status);
       return res.status(200).json({
         status: 1,
         message: "success",
@@ -257,7 +283,7 @@ exports.reschedule = async (req, res) => {
         country: result.country,
         state: result.state,
         city: result.city,
-        
+
         followup_date: result.followup_date,
         status: result.status,
         comment: result.comment,
@@ -331,14 +357,14 @@ exports.bydate = async (req, res) => {
 exports.carddata = async (req, res) => {
   const currentDate = new Date();
   const year = currentDate.getFullYear();
-  const month = String(currentDate.getMonth() + 1).padStart(2, "0"); //  
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0"); //
   const day = String(currentDate.getDate()).padStart(2, "0");
   const todayDate = `${year}-${month}-${day}`;
-  let today = moment().format("YYYY-MM-DD")
+  let today = moment().format("YYYY-MM-DD");
   try {
     const user = req.email;
     const isAdmin = req.isAdmin;
-    let totalLead, totalRelevent, todayFollowup, todayLeads
+    let totalLead, totalRelevent, todayFollowup, todayLeads;
     if (isAdmin) {
       totalLead = await allUserData.count();
       totalRelevent = await allUserData.count({
@@ -387,9 +413,9 @@ exports.carddata = async (req, res) => {
         totalLead: totalLead,
         totalRelevent: totalRelevent,
         todayFollowup: todayFollowup,
-        todayLeads: todayLeads
-      }
-    })
+        todayLeads: todayLeads,
+      },
+    });
   } catch (error) {
     console.log(error);
     return res.send(error);
@@ -398,7 +424,7 @@ exports.carddata = async (req, res) => {
 
 exports.todayApp = async (req, res) => {
   try {
-    const user = req.email
+    const user = req.email;
     const isAdmin = req.isAdmin;
     const currentDate = new Date();
     const year = currentDate.getFullYear();
@@ -420,21 +446,19 @@ exports.todayApp = async (req, res) => {
       return res.status(200).json({
         status: 1,
         message: "success",
-        data: result
-      })
+        data: result,
+      });
     } else {
       return res.status(200).json({
         status: 0,
         message: "no record found",
-      })
+      });
     }
   } catch (error) {
     console.log(error);
     return res.send(error);
   }
 };
-
-
 
 exports.uploadData = async (req, res) => {
   const file = req.file;
@@ -443,7 +467,7 @@ exports.uploadData = async (req, res) => {
   const options = { userId: req.userId };
   const uploadPath = `${__dirname}/upload`;
 
-  let user = req.email
+  let user = req.email;
 
   //  validate file type
   if (!(await validateFileType({ file, extensions }))) {
@@ -457,10 +481,7 @@ exports.uploadData = async (req, res) => {
     return res.send({ status: 0, message: "Something went wrong" });
   }
 
-
-
   try {
-
     let fileObj = { file: file, uploadPath: uploadPath };
     // read file
     fileObj = await readFile(fileObj);
@@ -470,12 +491,11 @@ exports.uploadData = async (req, res) => {
         message: "file is empty pls provide record",
       });
 
-    let dataInserted=[]
+    let dataInserted = [];
     if (fileObj) {
       let recordCount = fileObj.fileData.length;
 
       for (const iterator of fileObj.fileData) {
-
         let date = iterator.field1;
         let agentName = iterator.field2;
         let agentMailId = iterator.field3;
@@ -491,22 +511,17 @@ exports.uploadData = async (req, res) => {
         let thirdFollowupStatus = iterator.field13;
         let status = iterator.field14;
 
+        if (typeof date === "string") {
+          let parts = date.split("-"); // Split the string by '-'
 
-if (typeof date === 'string') {
+          // Extract day, month, and year from the parts array
+          let day = parseInt(parts[0]);
+          let month = parseInt(parts[1]) - 1; // Month is zero-based in JavaScript Date object
+          let year = parseInt(parts[2]);
 
-  let parts = date.split("-"); // Split the string by '-'
-
-  // Extract day, month, and year from the parts array
-  let day = parseInt(parts[0]);
-  let month = parseInt(parts[1]) - 1; // Month is zero-based in JavaScript Date object
-  let year = parseInt(parts[2]);
-  
-  // Create a new Date object
-   date= new Date(year, month, day);
-
-}
-
-
+          // Create a new Date object
+          date = new Date(year, month, day);
+        }
 
         let obj = {
           name: paitentName,
@@ -522,16 +537,18 @@ if (typeof date === 'string') {
           status: status,
           comment: thirdFollowupStatus,
           user: agentMailId,
-          createdAt:moment(date).format("YYYY-MM-DD HH:mm:ss")
+          createdAt: moment(date).format("YYYY-MM-DD HH:mm:ss"),
         };
         console.log(obj);
         try {
-          let result = await allUserData.findOne({ where: { phone: contactNumber  } });
+          let result = await allUserData.findOne({
+            where: { phone: contactNumber },
+          });
           if (result) {
-            continue
+            continue;
           }
-           result = await allUserData.create(obj);
-          dataInserted.push(result)
+          result = await allUserData.create(obj);
+          dataInserted.push(result);
           if (firstFollowupStatus) {
             let obj = {
               leadId: result.id,
@@ -545,10 +562,10 @@ if (typeof date === 'string') {
               state: result.state,
               city: result.city,
               followup_date: result.followup_date,
-              status:result.status,
+              status: result.status,
               comment: firstFollowupStatus,
               user: result.user,
-              createdAt:result.createdAt
+              createdAt: result.createdAt,
             };
             const data = await allUserDataHistory.create(obj);
           }
@@ -568,13 +585,13 @@ if (typeof date === 'string') {
               status: result.status,
               comment: secoundFollowupStatus,
               user: result.user,
-              createdAt:result.createdAt
+              createdAt: result.createdAt,
             };
             const data = await allUserDataHistory.create(obj);
           }
         } catch (error) {
           console.log("error", error);
-          dataInserted.push(JSON.parse(error))
+          dataInserted.push(JSON.parse(error));
         }
       }
       return res.send({
