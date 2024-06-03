@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   console.log(email, password);
-  try {                                                                                          
+  try {
     const result = await User.findOne({ where: { email: email } });
     if (!result) {
       return res.status(200).json({ status: 0, message: "User is not Exist" });
@@ -43,53 +43,76 @@ exports.login = async (req, res) => {
         .json({ status: 0, message: "Password is not correct" });
     }
     if (!result.allowLogin) {
-      return res.status(200).json({ status: 0, message: "You are in waitting list" });
+      return res
+        .status(200)
+        .json({ status: 0, message: "You are in waitting list" });
     }
     const token = jwt.sign(
       { email: result.email, name: result.name.toString() },
       "bsfnvhjfcswdkbesdktjcva",
       { expiresIn: "24h" }
     );
-    return res
-      .status(200)
-      .json({
-        status: 1,
-        message: "login_success",
-        data: { token: token, user: result },
-      });
+    return res.status(200).json({
+      status: 1,
+      message: "login_success",
+      data: { token: token, user: result },
+    });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ error });
   }
 };
 
-
-exports.GiveAcces = async (req, res)=>{
+exports.GiveAcces = async (req, res) => {
   try {
     const id = req.params.id;
-    const {allowLogin}=req.body;
-    const result=await User.findOne({ where: { id:id } });
-    if(result){
-await result.update({
-  allowLogin:allowLogin
-})
-return res.status(200).json({
-  status:1,
-  message:"success",
-  data:result
-})
-    }else{
-return res.status(200).json({
-  status:0,
-  message:"No data found"
-})
+    const { allowLogin } = req.body;
+    const result = await User.findOne({ where: { id: id } });
+    if (result) {
+      await result.update({
+        allowLogin: allowLogin,
+      });
+      return res.status(200).json({
+        status: 1,
+        message: "success",
+        data: result,
+      });
+    } else {
+      return res.status(200).json({
+        status: 0,
+        message: "No data found",
+      });
     }
   } catch (error) {
     console.log(error);
-    return res.status(400).json({error});
+    return res.status(400).json({ error });
   }
-}
-
+};
+exports.GiveAccesForAdmin = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { isAdmin } = req.body;
+    const result = await User.findOne({ where: { id: id } });
+    if (result) {
+      await result.update({
+        isAdmin: isAdmin,
+      });
+      return res.status(200).json({
+        status: 1,
+        message: "success",
+        data: result,
+      });
+    } else {
+      return res.status(200).json({
+        status: 0,
+        message: "No data found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ error });
+  }
+};
 exports.getUserByEmail = async (req, res, email) => {
   try {
     const result = await User.findOne({ where: { email: email } });
@@ -110,17 +133,16 @@ exports.getUserByEmail = async (req, res, email) => {
   }
 };
 
-
 exports.getAllUser = async (req, res) => {
   try {
     const result = await User.findAll();
     if (!result) {
       return res.status(200).json({ status: 0, message: "No record found" });
     }
-    return res.send( {
+    return res.send({
       status: 1,
       data: result,
-    })
+    });
   } catch (error) {
     console.log(error);
     return res.send(error);
@@ -128,20 +150,18 @@ exports.getAllUser = async (req, res) => {
 };
 
 exports.getselfUser = async (req, res) => {
-  let email=req.email
+  let email = req.email;
   try {
-    const result = await User.findOne({where:{ email: email }});
+    const result = await User.findOne({ where: { email: email } });
     if (!result) {
       return res.status(200).json({ status: 0, message: "No record found" });
     }
-    return res.send( {
+    return res.send({
       status: 1,
       data: result,
-    })
+    });
   } catch (error) {
     console.log(error);
     return res.send(error);
   }
 };
-
-

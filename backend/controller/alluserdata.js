@@ -9,6 +9,8 @@ const {
   readFile,
 } = require("../midelware/commonServices");
 const { Op, literal } = require("sequelize");
+const sequelize = require("sequelize");
+const Sequelize = require("sequelize");
 
 exports.create = async (req, res) => {
   try {
@@ -73,10 +75,7 @@ exports.create = async (req, res) => {
 };
 
 exports.readdata = async (req, res) => {
-  let {
-    page,
-    limit,
-  } = req.query;
+  let { startDate, endDate, q, page, limit ,createuser} = req.query;
   try {
     const status = req.query.status;
     const user = req.email;
@@ -101,14 +100,6 @@ exports.readdata = async (req, res) => {
             [Op.or]: ["F", "R"],
           },
         };
-        // result = await allUserData.findAll({
-        //   order: [["createdAt", "DESC"]],
-        //   where: {
-        //     status: {
-        //       [Op.or]: ["F", "R"],
-        //     },
-        //   },
-        // });
       } else {
         option.where = {
           user: user,
@@ -116,26 +107,34 @@ exports.readdata = async (req, res) => {
             [Op.or]: ["F", "R"],
           },
         };
-        // result = await allUserData.findAll({
-        //   order: [["createdAt", "DESC"]],
-        //   where: {
-        //     user: user,
-        //     status: {
-        //       [Op.or]: ["F", "R"],
-        //     },
-        //   },
-        // });
       }
     } else {
       if (isAdmin) {
         option.where = { status: status };
-        // result = await allUserData.findAll({
-        //   order: [["createdAt", "DESC"]],
-        //   where: { status: status },
-        // });
       } else {
         option.where = { status: status, user: user };
       }
+    }
+    if (q) {
+      let obj = {
+        [Op.or]: {
+          name: { [Op.substring]: sequelize.literal(q) },
+          phone: { [Op.substring]: sequelize.literal(q) },
+        },
+      };
+      option.where = { ...option.where, ...obj };
+    }
+    if (startDate && endDate) {
+      option.where = {
+        ...option.where,
+        createdAt: { [Op.between]: [startDate, moment(endDate).add(1,"day").format("YYYY-MM-DD")] },
+      };
+    }
+    if (createuser) {
+      option.where = {
+        ...option.where,
+        user: { [Op.eq]: createuser },
+      };
     }
     const { count, rows } = await allUserData.findAndCountAll(option);
     if (rows && rows.length > 0) {

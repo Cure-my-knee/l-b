@@ -14,6 +14,7 @@ router.put("/reschedule/:id", isAuth, userData.reschedule)
 router.get("/today-appointment",isAuth, userData.todayApp)
 router.get("/card-data", isAuth,userData.carddata)
 router.put("/giveaccess/:id", isAuth, userLogin.GiveAcces)
+router.put("/giveaccesstoadmin/:id",  userLogin.GiveAccesForAdmin)
 router.post(
   "/userData/upload",
   [upload.single("file")],
