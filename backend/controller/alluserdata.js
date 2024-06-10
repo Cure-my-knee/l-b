@@ -188,7 +188,7 @@ exports.readbyId = async (req, res) => {
       include: [
         {
           association: "all_user_data_histories",
-          required: true,
+          required: false,
         },
       ],
     };
@@ -201,7 +201,7 @@ exports.readbyId = async (req, res) => {
         data: result,
       });
     } else {
-      return res.send(200).json({
+      return res.send({
         status: 0,
         message: "No Data Found",
       });
