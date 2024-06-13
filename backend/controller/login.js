@@ -50,7 +50,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { email: result.email, name: result.name.toString() },
       "bsfnvhjfcswdkbesdktjcva",
-      { expiresIn: "24h" }
+      { expiresIn: "10h" }
     );
     return res.status(200).json({
       status: 1,
