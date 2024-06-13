@@ -268,7 +268,7 @@ exports.updatebyId = async (req, res) => {
 exports.reschedule = async (req, res) => {
   try {
     const id = req.params.id;
-    const { leadstatus, comment, rdate } = req.body;
+    const { leadstatus, comment, rdate, queries, age } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
       let obj = {
@@ -292,7 +292,9 @@ exports.reschedule = async (req, res) => {
       await result.update({
         status: leadstatus,
         comment: comment,
-        followup_date: rdate,
+        followup_date: rdate,  
+        queries:queries,
+        age:age
       });
       return res.status(200).json({
         status: 1,
