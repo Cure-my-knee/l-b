@@ -55,6 +55,12 @@ exports.create = async (req, res) => {
     };
 
     let result = await allUserData.findOne({ where: { phone: phone } });
+      if(!result && phone.includes("+91")){
+    result =await allUserData.findOne({where:{phone:phone.slice(3)}});
+  }
+  else if(!result){
+    result =await allUserData.findOne({where:{phone:`+91${phone}`}});
+  }
     if (result) {
       return res
         .status(200)
