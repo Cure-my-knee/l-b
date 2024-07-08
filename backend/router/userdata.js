@@ -15,6 +15,7 @@ router.get("/today-appointment",isAuth, userData.todayApp)
 router.get("/card-data", isAuth,userData.carddata)
 router.put("/giveaccess/:id", isAuth, userLogin.GiveAcces)
 router.put("/giveaccesstoadmin/:id",  userLogin.GiveAccesForAdmin)
+router.put("/update-user", isAuth, userData.updateUser)
 router.post(
   "/userData/upload",
   [upload.single("file")],
@@ -22,3 +23,4 @@ router.post(
 );
 
 module.exports = router;
+

@@ -55,12 +55,12 @@ exports.create = async (req, res) => {
     };
 
     let result = await allUserData.findOne({ where: { phone: phone } });
-      if(!result && phone.includes("+91")){
-    result =await allUserData.findOne({where:{phone:phone.slice(3)}});
-  }
-  else if(!result){
-    result =await allUserData.findOne({where:{phone:`+91${phone}`}});
-  }
+    if(!result && phone.includes("+91")){
+      result =await allUserData.findOne({where:{phone:phone.slice(3)}});
+    }
+    else if(!result){
+      result =await allUserData.findOne({where:{phone:`+91${phone}`}});
+    }
     if (result) {
       return res
         .status(200)
@@ -79,6 +79,18 @@ exports.create = async (req, res) => {
     return res.send(error);
   }
 };
+
+exports.dailyeport= async(req,res)=>{
+  const user = req.email;
+  const reportdate=req.query.reportdate
+  let option = { order: [["createdAt", "DESC"]] };
+  try {
+    const result = await allUserDataHistory.findAll({where:{user:user, createdAt:reportdate, ...option}})
+  } catch (error) {
+    console.log(error);
+    return res.send(error);
+  }
+}
 
 exports.readdata = async (req, res) => {
   let { startDate, endDate, q, page, limit ,createuser} = req.query;
@@ -142,6 +154,7 @@ exports.readdata = async (req, res) => {
         user: { [Op.eq]: createuser },
       };
     }
+
     const { count, rows } = await allUserData.findAndCountAll(option);
     if (rows && rows.length > 0) {
       return res.send({
@@ -218,6 +231,35 @@ exports.readbyId = async (req, res) => {
   }
 };
 
+
+
+exports.updateUser = async (req, res) => {
+  try {
+    const {
+      arrayofId,
+      user,
+    } = req.body;
+    const result = await allUserData.findAll({ where: { id: arrayofId} });
+    if (result) {
+      await allUserData.update({user: user}, {where:{id:arrayofId}});
+      return res.status(200).json({
+        status: 1,
+        message: "success",
+        data: result,
+      });
+    } else {
+      return res.status(200).json({
+        status: 0,
+        message: "No Data Found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send(error);
+  }
+};
+
+
 exports.updatebyId = async (req, res) => {
   try {
     const id = req.params.id;
@@ -236,7 +278,7 @@ exports.updatebyId = async (req, res) => {
       comment,
       user,
     } = req.body;
-    const result = await allUserData.findOne({ where: { id: id } });
+    const result = await allUserData.findOne({ where: { id: [id] } });
     if (result) {
       await result.update({
         name: name,
