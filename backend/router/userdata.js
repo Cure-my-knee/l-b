@@ -16,11 +16,13 @@ router.get("/card-data", isAuth,userData.carddata)
 router.put("/giveaccess/:id", isAuth, userLogin.GiveAcces)
 router.put("/giveaccesstoadmin/:id",  userLogin.GiveAccesForAdmin)
 router.put("/update-user", isAuth, userData.updateUser)
+router.put("/change-password/:id", isAuth, userLogin.changeassword)
 router.post(
   "/userData/upload",
   [upload.single("file")],
   userData.uploadData
 );
+router.get("/dailyreport", isAuth,userData.dailyeport)
 
 module.exports = router;
 

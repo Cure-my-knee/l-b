@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcryptjs = require("bcrypt");
 const db = require("../models");
+const { where } = require("sequelize");
 const User = db.crmusers;
 
 exports.register = async (req, res) => {
@@ -62,6 +63,32 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error });
   }
 };
+
+exports.changeassword= async(req, res)=>{
+  try {
+    const id=req.params.id;
+    const {newpassword}=req.body;
+    const hashpassword = await bcryptjs.hash(newpassword, 12);
+    const result = await User.findOne({where: {id:id}})
+    if(result){
+await User.update({password:hashpassword}, {where:{id:id}});
+return res.status(200).json({
+  status:1,
+  message:"success",
+  data: result,
+})
+    }
+    else{
+return res.status(200).json({
+  status:0,
+  message:"No data Found"
+})
+    }
+  } catch (error) {
+    console.log(error)
+    return res.status(400).json({error})
+  }
+}
 
 exports.GiveAcces = async (req, res) => {
   try {
