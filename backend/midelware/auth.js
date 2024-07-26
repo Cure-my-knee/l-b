@@ -17,7 +17,7 @@ module.exports = (req, res, next) => {
           if (err) {
             return res.json({
               status: 401,
-              message: "ou need to be logged in to access this route",
+              message: "you need to be logged in to access this route",
             });
           } else {
             let email = decoded.email;
@@ -34,7 +34,7 @@ module.exports = (req, res, next) => {
             } else {
               return res.status(401).json({
                 status: 0,
-                message: req._("user do not exist"),
+                message: "user do not exist",
               });
             }
           }
