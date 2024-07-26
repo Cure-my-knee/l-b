@@ -34,7 +34,7 @@ module.exports = (req, res, next) => {
             } else {
               return res.status(401).json({
                 status: 0,
-                message: "user do not exist",
+                message: req._("user do not exist"),
               });
             }
           }
