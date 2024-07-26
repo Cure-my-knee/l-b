@@ -55,10 +55,11 @@ exports.create = async (req, res) => {
     };
 
     let result = await allUserData.findOne({ where: { phone: phone } });
-    if (!result && phone.includes("+91")) {
-      result = await allUserData.findOne({ where: { phone: phone.slice(3) } });
-    } else if (!result) {
-      result = await allUserData.findOne({ where: { phone: `+91${phone}` } });
+    if(!result && phone.includes("+91")){
+      result =await allUserData.findOne({where:{phone:phone.slice(3)}});
+    }
+    else if(!result){
+      result =await allUserData.findOne({where:{phone:`+91${phone}`}});
     }
     if (result) {
       return res
@@ -66,25 +67,6 @@ exports.create = async (req, res) => {
         .json({ status: 0, message: "This data is already exists" });
     }
     const data = await allUserData.create(obj);
-
-    let objH = {
-      leadId: data.id,
-      name: data.name,
-      age: data.age,
-      queries: data.queries,
-      email: data.email,
-      phone: data.phone,
-      source: data.source,
-      country: data.country,
-      state: data.state,
-      city: data.city,
-
-      followup_date: data.followup_date,
-      status: data.status,
-      comment: data.comment,
-      user: data.user,
-    };
-    const dataH = await allUserDataHistory.create(obj);
     return res.status(200).json({
       status: 1,
       message: "created",
@@ -98,50 +80,20 @@ exports.create = async (req, res) => {
   }
 };
 
-exports.dailyreport = async (req, res) => {
-  let { reportdate, page, limit, user } = req.query;
+exports.dailyeport= async(req,res)=>{
+  const user = req.email;
+  const reportdate=req.query.reportdate
+  let option = { order: [["createdAt", "DESC"]] };
   try {
-    let option = {
-      order: [["createdAt", "DESC"]],
-    };
-    if (page !== undefined && Number.isInteger(parseInt(page))) {
-      limit = limit && Number.isInteger(parseInt(limit)) ? +limit : 5;
-      page = parseInt(page);
-      page = page - 1 >= 0 ? page - 1 : 0;
-      option["limit"] = limit;
-      option["offset"] = page ? page * limit : 0;
-    }
-    if(reportdate){
-      option.where.createdAt=reportdate
-    }
-    if(user){
-      option.where.user=user
-    }
-    const { count, rows } = await allUserDataHistory.findAndCountAll(option);
-    if (rows && rows.length > 0) {
-      return res.send({
-        status: 1,
-        message: "success",
-        totalCount: count,
-        recordCount: rows.length,
-        currentPage: page ? page : undefined,
-        nextPage: page ? parseInt(page) + 1 : undefined,
-        data: rows,
-      });
-    }else{
-      return res.send({
-        status:0,
-        message:"no record found"
-      })
-    }
+    const result = await allUserDataHistory.findAll({where:{user:user, createdAt:reportdate, ...option}})
   } catch (error) {
     console.log(error);
     return res.send(error);
   }
-};
+}
 
 exports.readdata = async (req, res) => {
-  let { startDate, endDate, q, page, limit, createuser,followupDate,source } = req.query;
+  let { startDate, endDate, q, page, limit ,createuser} = req.query;
   try {
     const status = req.query.status;
     const user = req.email;
@@ -193,30 +145,13 @@ exports.readdata = async (req, res) => {
     if (startDate && endDate) {
       option.where = {
         ...option.where,
-        createdAt: {
-          [Op.between]: [
-            startDate,
-            moment(endDate).add(1, "day").format("YYYY-MM-DD"),
-          ],
-        },
+        createdAt: { [Op.between]: [startDate, moment(endDate).add(1,"day").format("YYYY-MM-DD")] },
       };
     }
     if (createuser) {
       option.where = {
         ...option.where,
         user: { [Op.eq]: createuser },
-      };
-    }
-    if(followupDate){
-      option.where = {
-        ...option.where,
-        followup_date: { [Op.eq]: followupDate },
-      };
-    }
-    if(source){
-      option.where = {
-        ...option.where,
-        source: { [Op.eq]: source },
       };
     }
 
@@ -296,12 +231,17 @@ exports.readbyId = async (req, res) => {
   }
 };
 
+
+
 exports.updateUser = async (req, res) => {
   try {
-    const { arrayofId, user } = req.body;
-    const result = await allUserData.findAll({ where: { id: arrayofId } });
+    const {
+      arrayofId,
+      user,
+    } = req.body;
+    const result = await allUserData.findAll({ where: { id: arrayofId} });
     if (result) {
-      await allUserData.update({ user: user }, { where: { id: arrayofId } });
+      await allUserData.update({user: user}, {where:{id:arrayofId}});
       return res.status(200).json({
         status: 1,
         message: "success",
@@ -318,6 +258,7 @@ exports.updateUser = async (req, res) => {
     return res.send(error);
   }
 };
+
 
 exports.updatebyId = async (req, res) => {
   try {
@@ -375,14 +316,14 @@ exports.updatebyId = async (req, res) => {
 exports.reschedule = async (req, res) => {
   try {
     const id = req.params.id;
-    const { leadstatus, comment, rdate, queries, age } = req.body;
+    const { leadstatus, comment, rdate , queries, age } = req.body;
     const result = await allUserData.findOne({ where: { id: id } });
     if (result) {
       let obj = {
         leadId: result.id,
         name: result.name,
-        age: age,
-        queries: queries,
+        age: result.age,
+        queries: result.queries,
         email: result.email,
         phone: result.phone,
         source: result.source,
@@ -390,9 +331,9 @@ exports.reschedule = async (req, res) => {
         state: result.state,
         city: result.city,
 
-        followup_date: rdate,
-        status: leadstatus,
-        comment: comment,
+        followup_date: result.followup_date,
+        status: result.status,
+        comment: result.comment,
         user: result.user,
       };
       const data = await allUserDataHistory.create(obj);
@@ -400,8 +341,8 @@ exports.reschedule = async (req, res) => {
         status: leadstatus,
         comment: comment,
         followup_date: rdate,
-        queries: queries,
-        age: age,
+        queries:queries,
+        age:age
       });
       return res.status(200).json({
         status: 1,
