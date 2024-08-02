@@ -66,7 +66,7 @@ exports.login = async (req, res) => {
 exports.changepassword = async (req, res) => {
   try {
     const id = req.params.id;
-    const newpassword = req.body;
+    const {newpassword} = req.body;
     const hashpassword = await bcryptjs.hash(newpassword, 12);
     const result = await User.findOne({ where: { id: id } });
     if (result) {

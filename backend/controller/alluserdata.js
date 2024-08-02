@@ -63,7 +63,7 @@ exports.create = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ status: 0, message: "This data is already exists" });
+        .json({ status: 0, message: "This data is already exists", data:result });
     }
     const data = await allUserData.create(obj);
 
@@ -78,13 +78,12 @@ exports.create = async (req, res) => {
       country: data.country,
       state: data.state,
       city: data.city,
-
       followup_date: data.followup_date,
       status: data.status,
       comment: data.comment,
       user: data.user,
     };
-    const dataH = await allUserDataHistory.create(obj);
+    const dataH = await allUserDataHistory.create(objH);
     return res.status(200).json({
       status: 1,
       message: "created",
@@ -276,6 +275,7 @@ exports.dailyeport = async (req, res) => {
           {
             association: "all_user_data_histories",
             required: false,
+            order: [["createdAt", "DESC"]],
           },
         ],
       };
