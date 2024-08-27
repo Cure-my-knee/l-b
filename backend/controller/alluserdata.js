@@ -11,6 +11,7 @@ const {
 const { Op, fn, col, literal } = require("sequelize");
 const sequelize = require("sequelize");
 const Sequelize = require("sequelize");
+const { QueryTypes } = require('sequelize');
 
 exports.create = async (req, res) => {
   try {
@@ -103,124 +104,186 @@ exports.getMonthlyLeadsData = async (req, res) => {
   try {
     const user = req.email;
     const isAdmin = req.isAdmin;
-    const endDate=moment(new Date).add(1,"day").format("YYYY-MM-DD")
-    const startDate=moment(new Date).subtract(1,"month").format("YYYY-MM-DD")
-    let totalLeads, NotAnswered, Wonleads, followup, appointmentDone , lostLeads
+    const endDate = moment(new Date()).add(1, "day").format("YYYY-MM-DD");
+    const startDate = moment(new Date())
+      .subtract(1, "month")
+      .format("YYYY-MM-DD");
+    let totalLeads, NotAnswered, Wonleads, followup, appointmentDone, lostLeads;
     if (isAdmin) {
-     totalLeads = await allUserData.count({
-      where: {
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      totalLeads = await allUserData.count({
+        where: {
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-    NotAnswered = await allUserData.count({
-      where: {
-        status: "CallNA",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      NotAnswered = await allUserData.count({
+        where: {
+          status: "CallNA",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     Wonleads = await allUserData.count({
-      where: {
-        status: "W",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      Wonleads = await allUserData.count({
+        where: {
+          status: "W",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     followup = await allUserData.count({
-      where: {
-        status: {[Op.in]:["F","R"]},
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      followup = await allUserData.count({
+        where: {
+          status: { [Op.in]: ["F", "R"] },
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     appointmentDone = await allUserData.count({
-      where: {
-        status: "Apt",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      appointmentDone = await allUserData.count({
+        where: {
+          status: "Apt",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
+      });
 
-     lostLeads = await allUserData.count({
-      where: {
-        status: "L",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      lostLeads = await allUserData.count({
+        where: {
+          status: "L",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-  } else {
-     totalLeads = await allUserData.count({
-      where: {
-        user: user, 
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+    } else {
+      totalLeads = await allUserData.count({
+        where: {
+          user: user,
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-    NotAnswered = await allUserData.count({
-      where: {
-        user: user, 
-        status: "CallNA",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      NotAnswered = await allUserData.count({
+        where: {
+          user: user,
+          status: "CallNA",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     Wonleads = await allUserData.count({
-      where: {
-        user: user, 
-        status: "W",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      Wonleads = await allUserData.count({
+        where: {
+          user: user,
+          status: "W",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     followup = await allUserData.count({
-      where: {
-        user: user, 
-        status: {[Op.in]:["F","R"]},
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      followup = await allUserData.count({
+        where: {
+          user: user,
+          status: { [Op.in]: ["F", "R"] },
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     appointmentDone = await allUserData.count({
-      where: {
-        user: user, 
-        status: "Apt",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      appointmentDone = await allUserData.count({
+        where: {
+          user: user,
+          status: "Apt",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
-    });
-     lostLeads = await allUserData.count({
-      where: {
-        user: user, 
-        status: "L",
-        createdAt: {
-          [Op.between]: [startDate, endDate], // Between two dates
+      });
+      lostLeads = await allUserData.count({
+        where: {
+          user: user,
+          status: "L",
+          createdAt: {
+            [Op.between]: [startDate, endDate], // Between two dates
+          },
         },
-      },
+      });
+    }
+
+    return res.send({
+      status: 1,
+      message: "success",
+      totalLeads: totalLeads,
+      wonleads: Wonleads,
+      followup: followup,
+      appointmentDone: appointmentDone,
+      lostLeads: lostLeads,
+      NotAnswered: NotAnswered,
     });
+  } catch (error) {
+    console.log(error);
+    return res.send(error);
   }
-      return res.send({
-        status: 1,
-        message: "success",
-        totalLeads: totalLeads,
-        wonleads: Wonleads,
-        followup:followup,
-        appointmentDone:appointmentDone,
-        lostLeads:lostLeads,
-        NotAnswered:NotAnswered
-      })
+};
 
+exports.getMonthlyLeadsDataforBarChart = async (req, res) => {
+  try {
+    const user = req.email;
+    const isAdmin = req.isAdmin;
+    let result;
+    if (isAdmin) {
+      result=await db.sequelize.query(`SELECT 
+        DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%b') AS months,
+        SUM(CASE WHEN status = 'L' THEN 1 ELSE 0 END) AS lostLeads,
+        SUM(CASE WHEN status = 'W' THEN 1 ELSE 0 END) AS wonLeads,
+        count(*) AS totalLeads
+    FROM 
+        (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 
+        UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS t
+    LEFT JOIN 
+        all_user_data AS y
+    ON 
+        DATE_FORMAT(y.createdAt, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%Y-%m')
+    GROUP BY 
+        t.n
+    ORDER BY 
+        t.n ASC`,{
+          type: QueryTypes.SELECT,
+        });
+    } else {
+      result=await db.sequelize.query(`SELECT 
+        DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%b') AS months,
+        IFNULL(SUM(CASE WHEN status = 'L' THEN 1 ELSE 0 END),0) AS lostLeads,
+        IFNULL(SUM(CASE WHEN status = 'W' THEN 1 ELSE 0 END),0) AS wonLeads,
+        IFNULL(count(*),0) AS totalLeads
+    FROM 
+        (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 
+        UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS t
+    LEFT JOIN 
+        all_user_data AS y
+    ON 
+        DATE_FORMAT(y.createdAt, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%Y-%m')
+    where y.user='${user}'    
+    GROUP BY 
+        t.n
+    ORDER BY 
+        t.n ASC`,{
+          type: QueryTypes.SELECT,
+        });
+    }
+    let data=[]
+    if(result){
+     data= result.map((i)=>[i.months,i.totalLeads,i.wonLeads,i.lostLeads])
+    }
+    return res.send({
+      status: 1,
+      message: "success",
+      data:data
+    });
   } catch (error) {
     console.log(error);
     return res.send(error);
@@ -555,7 +618,6 @@ exports.reschedule = async (req, res) => {
   }
 };
 
-
 exports.carddata = async (req, res) => {
   const currentDate = new Date();
   const year = currentDate.getFullYear();
@@ -593,7 +655,7 @@ exports.carddata = async (req, res) => {
       });
       todayFollowup = await allUserData.count({
         where: {
-          user: user, 
+          user: user,
           followup_date: todayDate,
           status: {
             [Op.or]: ["F", "R"],
