@@ -1,4 +1,7 @@
 const moment = require("moment");
+const fs = require("fs");
+const jwt = require("jsonwebtoken");
+const xlsx = require("xlsx");
 const db = require("../models");
 const allUserData = db.all_user_data;
 const allUserDataHistory = db.all_user_data_histories;
@@ -11,7 +14,7 @@ const {
 const { Op, fn, col, literal } = require("sequelize");
 const sequelize = require("sequelize");
 const Sequelize = require("sequelize");
-const { QueryTypes } = require('sequelize');
+const { QueryTypes } = require("sequelize");
 
 exports.create = async (req, res) => {
   try {
@@ -236,7 +239,8 @@ exports.getMonthlyLeadsDataforBarChart = async (req, res) => {
     const isAdmin = req.isAdmin;
     let result;
     if (isAdmin) {
-      result=await db.sequelize.query(`SELECT 
+      result = await db.sequelize.query(
+        `SELECT 
         DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%b') AS months,
         SUM(CASE WHEN status = 'L' THEN 1 ELSE 0 END) AS lostLeads,
         SUM(CASE WHEN status = 'W' THEN 1 ELSE 0 END) AS wonLeads,
@@ -251,11 +255,14 @@ exports.getMonthlyLeadsDataforBarChart = async (req, res) => {
     GROUP BY 
         t.n
     ORDER BY 
-        t.n ASC`,{
+        t.n ASC`,
+        {
           type: QueryTypes.SELECT,
-        });
+        }
+      );
     } else {
-      result=await db.sequelize.query(`SELECT 
+      result = await db.sequelize.query(
+        `SELECT 
         DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL t.n MONTH), '%b') AS months,
         IFNULL(SUM(CASE WHEN status = 'L' THEN 1 ELSE 0 END),0) AS lostLeads,
         IFNULL(SUM(CASE WHEN status = 'W' THEN 1 ELSE 0 END),0) AS wonLeads,
@@ -271,18 +278,25 @@ exports.getMonthlyLeadsDataforBarChart = async (req, res) => {
     GROUP BY 
         t.n
     ORDER BY 
-        t.n ASC`,{
+        t.n ASC`,
+        {
           type: QueryTypes.SELECT,
-        });
+        }
+      );
     }
-    let data=[]
-    if(result){
-     data= result.map((i)=>[i.months,i.totalLeads,i.wonLeads,i.lostLeads])
+    let data = [];
+    if (result) {
+      data = result.map((i) => [
+        i.months,
+        i.totalLeads,
+        i.wonLeads,
+        i.lostLeads,
+      ]);
     }
     return res.send({
       status: 1,
       message: "success",
-      data:data
+      data: data,
     });
   } catch (error) {
     console.log(error);
@@ -867,5 +881,131 @@ exports.uploadData = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.send({ status: 0, error: error });
+  }
+};
+
+exports.exportAllUsersData = async (req, res) => {
+  const { startDate, endDate, token } = req.query;
+  const decoded = this.verifyJWTToken(token);
+console.log(startDate,endDate);
+
+  if (!decoded.status) return res.end();
+  let finalExcelData = [];
+  let uploadFileDirPath = `${__dirname}/upload`;
+  let fileTitle = "UsersData_";
+  let fileName = `${fileTitle + new Date().toISOString()}.xlsx`;
+  let whereObj;
+  if (startDate && endDate) {
+    let dateWiseObj = {
+      createdAt: { [Op.between]: [startDate, endDate] },
+    };
+    whereObj = dateWiseObj;
+  }
+  try {
+    let option = { where: whereObj }
+    let result 
+    if (whereObj) {
+      result = await allUserData.findAll(option);
+    }else{
+      result = await allUserData.findAll();
+    }
+    if (!result || result.length < 1)
+      return res.send({
+        status: 0,
+        message: "no record found",
+      });
+    for (let row of result) {
+      finalExcelData.push({
+        assign_date: row.createdAt,
+        name: row.name,
+        age: row.age,
+        phone: row.phone,
+        email: row.email,
+        queries: row.queries,
+        source: row.source,
+        city: row.city,
+        state: row.state,
+        country: row.country,
+        status: row.status,
+        comment: row.comment,
+        followup_date: row.followup_date,
+        user: row.user,
+      });
+    }
+    let filePath = await this.downloadExcelFile(
+      finalExcelData,
+      uploadFileDirPath,
+      fileName
+    );
+    if (filePath.status === 1) {
+      res.setHeader("Content-Disposition", 'attachment; filename="data.xlsx"');
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      return res.send(filePath?.fileName);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.json({ status: 0, message: error });
+  }
+};
+
+exports.downloadExcelFile = async (objList, uploadFileDirPath, fileName) => {
+  try {
+    if (!fs.existsSync(uploadFileDirPath)) {
+      fs.mkdirSync(uploadFileDirPath, { recursive: true });
+    }
+
+    const workSheet = xlsx.utils.json_to_sheet(objList);
+    const workBook = xlsx.utils.book_new();
+
+    // xlsx.utils.book_append_sheet(workBook, workSheet);
+
+    // Generate buffer
+    // xlsx.write(workBook, { bookType: "xlsx", type: "buffer" });
+
+    // // Binary string
+    // xlsx.write(workBook, { bookType: "xlsx", type: "binary" });
+
+    // xlsx.writeFile(workBook, uploadFileDirPath + "/" + fileName);
+
+    xlsx.utils.book_append_sheet(workBook, workSheet, "Sheet1");
+
+    // Generate buffer
+    const excelBuffer = xlsx.write(workBook, {
+      bookType: "xlsx",
+      type: "buffer",
+    });
+
+    // Send the buffer as a downloadable file
+    return {
+      fileName: excelBuffer,
+      status: 1,
+      message: "file created",
+    };
+  } catch (error) {
+    console.log(error);
+    return { status: 0, message: error.message };
+  }
+};
+
+exports.verifyJWTToken = (token) => {
+  try {
+    const JWT_SECRET = "bsfnvhjfcswdkbesdktjcva";
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    return {
+      status: 1,
+      message: "success",
+      data: decoded,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      status: 0,
+      message: error & error.message ? error.message : "Error",
+    };
   }
 };

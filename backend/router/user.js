@@ -3,6 +3,7 @@ const router =express.Router()
 const userController=require("../controller/login")
 const isAuth = require("../midelware/auth");
 
+router.post("/verify-password",isAuth, userController.passwordVerify)
 router.post("/login", userController.login)
 router.post("/signup", userController.register)
 router.get("/users",isAuth, userController.getAllUser)

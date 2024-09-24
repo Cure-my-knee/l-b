@@ -62,7 +62,35 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error });
   }
 };
-
+exports.passwordVerify = async (req, res) => {
+  let email = req.email;
+  const { password } = req.body;
+  if (!password) {
+    return res
+      .status(200)
+      .json({ status: 0, message: "Password is required" });
+  }
+  console.log(email, password);
+  try {
+    const result = await User.findOne({ where: { email: email } });
+    if (!result) {
+      return res.status(200).json({ status: 0, message: "User is not Exist" });
+    }
+    const validPassword = await bcryptjs.compare(password, result.password);
+    if (!validPassword) {
+      return res
+        .status(200)
+        .json({ status: 0, message: "Password is not correct" });
+    }
+    return res.status(200).json({
+      status: 1,
+      message: "success",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ error });
+  }
+};
 exports.changepassword = async (req, res) => {
   try {
     const id = req.params.id;

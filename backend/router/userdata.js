@@ -25,5 +25,7 @@ router.post(
 );
 router.get("/dailyreport", isAuth,userData.dailyeport)
 
+router.get("/export-excel", userData.exportAllUsersData)
+
 module.exports = router;
 
