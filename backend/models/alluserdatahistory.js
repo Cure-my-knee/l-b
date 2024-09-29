@@ -54,7 +54,7 @@ module.exports = (sequelize, DataTypes) => {
       allownull: false,
     },
     assignedDate: {
-      type: DataTypes.DATETIME,
+      type: DataTypes.DATE,
     },
     user: {
       type: DataTypes.STRING,
