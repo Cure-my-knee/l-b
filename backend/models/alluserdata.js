@@ -18,11 +18,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     phone: {
       type: DataTypes.STRING,
-      allownull:false,
+      allownull: false,
     },
     source: {
       type: DataTypes.STRING,
-      allownull:false,
+      allownull: false,
     },
     country: {
       type: DataTypes.STRING,
@@ -48,6 +48,9 @@ module.exports = (sequelize, DataTypes) => {
     comment: {
       type: DataTypes.STRING,
       allownull: false,
+    },
+    assignedDate: {
+      type: DataTypes.DATETIME,
     },
     user: {
       type: DataTypes.STRING,

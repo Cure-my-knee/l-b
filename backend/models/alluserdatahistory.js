@@ -53,6 +53,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allownull: false,
     },
+    assignedDate: {
+      type: DataTypes.DATETIME,
+    },
     user: {
       type: DataTypes.STRING,
       allownull: false,

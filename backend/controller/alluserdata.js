@@ -404,7 +404,7 @@ exports.readdata = async (req, res) => {
     if (startDate && endDate) {
       option.where = {
         ...option.where,
-        createdAt: {
+        assignedDate: {
           [Op.between]: [
             startDate,
             moment(endDate).add(1, "day").format("YYYY-MM-DD"),
@@ -564,6 +564,7 @@ exports.updatebyId = async (req, res) => {
         followup_date: followup_date,
         status: status,
         comment: comment,
+        assignedDate: moment(),
         user: user,
       });
       console.log("status", status);
@@ -659,7 +660,9 @@ exports.carddata = async (req, res) => {
 
       todayLeads = await allUserData.count({
         where: {
-          createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
+          assignedDate: literal(
+            `DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`
+          ),
         },
       });
     } else {
@@ -680,7 +683,7 @@ exports.carddata = async (req, res) => {
       todayLeads = await allUserData.count({
         where: {
           user: user,
-          createdAt: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
+          assignedDate: literal(`DATE_FORMAT(createdAt, '%Y-%m-%d') = '${today}'`),
         },
       });
     }
@@ -887,7 +890,7 @@ exports.uploadData = async (req, res) => {
 exports.exportAllUsersData = async (req, res) => {
   const { startDate, endDate, token } = req.query;
   const decoded = this.verifyJWTToken(token);
-console.log(startDate,endDate);
+  console.log(startDate, endDate);
 
   if (!decoded.status) return res.end();
   let finalExcelData = [];
@@ -902,11 +905,11 @@ console.log(startDate,endDate);
     whereObj = dateWiseObj;
   }
   try {
-    let option = { where: whereObj }
-    let result 
+    let option = { where: whereObj };
+    let result;
     if (whereObj) {
       result = await allUserData.findAll(option);
-    }else{
+    } else {
       result = await allUserData.findAll();
     }
     if (!result || result.length < 1)
