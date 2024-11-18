@@ -508,6 +508,33 @@ exports.readbyId = async (req, res) => {
   }
 };
 
+
+exports.handoverUser = async (req, res) => {
+  try {
+    const { id, user , name , olduser, phone} = req.body;
+    const result = await allUserData.findAll({ where: { id: id } });
+    console.log(user, olduser)
+    if (result) {
+      await allUserData.update({ user: user, }, { where: { user: olduser } });
+            await Users.update({ email: user, name:name , phone:phone}, { where: { id: id } });
+      return res.status(200).json({
+        status: 1,
+        message: "success",
+        data: result,
+      });
+
+    } else {
+      return res.status(200).json({
+        status: 0,
+        message: "No Data Found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send(error);
+  }
+};
+
 exports.updateUser = async (req, res) => {
   try {
     const { arrayofId, user } = req.body;

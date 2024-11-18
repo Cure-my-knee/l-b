@@ -18,6 +18,7 @@ router.put("/update-user", isAuth, userData.updateUser)
 router.put("/change-password/:id", isAuth, userLogin.changepassword)
 router.get("/monthly-data",isAuth,userData.getMonthlyLeadsData)
 router.get("/monthly-data-for-bar-chart",isAuth,userData.getMonthlyLeadsDataforBarChart)
+router.put("/handover-another-user", isAuth,userData.handoverUser)
 router.post(
   "/userData/upload",
   [upload.single("file")],
